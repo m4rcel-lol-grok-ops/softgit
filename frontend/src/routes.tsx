@@ -11,6 +11,7 @@ import {
   RepoPullsPage,
   RepoSettingsPage,
   RepoCommitsPage,
+  RepoReleasesPage,
 } from '@/pages/RepoPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { SearchPage } from '@/pages/SearchPage'
@@ -61,6 +62,7 @@ export function AppRoutes() {
           <Route index element={<RepoCodePage />} />
           <Route path="issues" element={<RepoIssuesPage />} />
           <Route path="pulls" element={<RepoPullsPage />} />
+          <Route path="releases" element={<RepoReleasesPage />} />
           <Route path="settings" element={<RepoSettingsPage />} />
           <Route path="commits" element={<RepoCommitsPage />} />
           <Route path="branches" element={<RepoCommitsPage />} />

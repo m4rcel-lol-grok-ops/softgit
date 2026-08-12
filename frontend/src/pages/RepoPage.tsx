@@ -28,7 +28,7 @@ import {
 import { cn } from '@/utils/cn'
 import { formatDistanceToNow } from 'date-fns'
 import { Markdown } from '@/components/Markdown'
-import { VerifiedBadge } from '@/components/VerifiedBadge'
+import { VerifiedBadge, VerifiedCommitBadge } from '@/components/VerifiedBadge'
 
 export function RepoLayout() {
   const { owner = '', repo = '' } = useParams()
@@ -70,6 +70,7 @@ export function RepoLayout() {
     { to: `/${owner}/${repo}`, label: 'Code', icon: Code2, end: true },
     { to: `/${owner}/${repo}/issues`, label: 'Issues', icon: CircleDot, count: repository.open_issues_count },
     { to: `/${owner}/${repo}/pulls`, label: 'Pull requests', icon: GitPullRequest },
+    { to: `/${owner}/${repo}/releases`, label: 'Releases', icon: Tag },
     { to: `/${owner}/${repo}/settings`, label: 'Settings', icon: Settings },
   ]
 
@@ -482,10 +483,18 @@ export function RepoCommitsPage() {
                 {c.subject}
               </Link>
               <div className="text-xs text-[var(--color-fg-muted)] mt-0.5">
-                {c.author}{c.verified && <VerifiedBadge size={12} className="ml-0.5" />} committed{' '}
+                {c.author}
+                {c.verified && (
+                  <>
+                    {' '}
+                    <VerifiedBadge size={12} className="inline-block align-text-bottom" />
+                  </>
+                )}{' '}
+                committed{' '}
                 {formatDistanceToNow(new Date(Number(c.date) * 1000), { addSuffix: true })}
               </div>
             </div>
+            {c.verified && <VerifiedCommitBadge size={14} />}
             <code className="text-xs font-mono text-[var(--color-fg-muted)]">{c.sha.slice(0, 7)}</code>
           </li>
         ))}
@@ -499,3 +508,19 @@ export function RepoCommitsPage() {
 
 void Tag
 void unstarRepository
+
+
+export function RepoReleasesPage() {
+  const { owner = '', repo = '' } = useParams()
+  return (
+    <div className="max-w-[1280px] mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Releases</h2>
+      </div>
+      <EmptyState
+        title="No releases yet"
+        description={`When ${owner}/${repo} publishes a release, it will appear here. Releases created by verified SoftGit accounts show a green Verified badge.`}
+      />
+    </div>
+  )
+}
