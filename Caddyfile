@@ -1,58 +1,13 @@
-# SoftGit Caddy – frontend + backend
 {$DOMAIN:localhost} {
-	encode zstd gzip
-
-	header {
-		X-Content-Type-Options nosniff
-		X-Frame-Options DENY
-		Referrer-Policy strict-origin-when-cross-origin
-		-Server
-	}
-
-	request_body {
-		max_size 2GB
-	}
-
 	handle /api/* {
-		reverse_proxy backend:3000 {
-			transport http {
-				read_timeout 3600s
-				write_timeout 3600s
-			}
-			header_up X-Real-IP {remote_host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			flush_interval -1
-		}
-	}
-
-	handle /*.git* {
-		reverse_proxy backend:3000 {
-			transport http {
-				read_timeout 3600s
-				write_timeout 3600s
-			}
-			header_up X-Real-IP {remote_host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			flush_interval -1
-		}
-	}
-
-	handle /health {
 		reverse_proxy backend:3000
 	}
 
-	handle /ready {
+	handle /*.git* {
 		reverse_proxy backend:3000
 	}
 
 	handle {
 		reverse_proxy frontend:80
-	}
-
-	log {
-		output stdout
-		format json
 	}
 }

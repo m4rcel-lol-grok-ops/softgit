@@ -115,3 +115,8 @@ export async function uploadAvatar(file: File): Promise<import('@/types').User> 
   })
   return data
 }
+
+export async function deleteAvatar(): Promise<import('@/types').User> {
+  const { data } = await apiClient.delete('/user/avatar')
+  return data
+}

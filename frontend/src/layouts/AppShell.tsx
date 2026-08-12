@@ -19,22 +19,17 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cn } from '@/utils/cn'
+import { applyTheme, getStoredThemeId, type ThemeId } from '@/themes'
 
 export function AppShell() {
   const { user, isAuthenticated, logout, isLoading } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-    return (localStorage.getItem('softgit_theme') as 'light' | 'dark' | 'system') || 'system'
-  })
+  const [theme, setTheme] = useState<ThemeId>(() => getStoredThemeId())
 
   useEffect(() => {
-    const root = document.documentElement
-    const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const dark = theme === 'dark' || (theme === 'system' && preferDark)
-    root.classList.toggle('dark', dark)
-    localStorage.setItem('softgit_theme', theme)
+    applyTheme(theme)
   }, [theme])
 
   const handleLogout = async () => {
@@ -97,7 +92,7 @@ export function AppShell() {
           <div className="flex items-center gap-1 ml-auto">
             <button
               className="p-1.5 rounded-md hover:bg-[var(--color-canvas-subtle)] text-[var(--color-fg-muted)]"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={() => setTheme(theme === 'dark' || theme === 'dim' || theme === 'dracula' || theme === 'nord' || theme === 'monokai' || theme === 'github-dark' || theme === 'solarized-dark' || theme === 'high-contrast' ? 'light' : 'dark')}
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -159,6 +154,13 @@ export function AppShell() {
                             <BookMarked size={16} /> Admin
                           </Link>
                         )}
+                        <Link
+                          to="/settings/appearance"
+                          className="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-canvas-subtle)] text-[var(--color-fg-default)] no-underline"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Sun size={16} /> Appearance
+                        </Link>
                         <div className="border-t border-[var(--color-border-muted)] my-1" />
                         <button
                           className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-canvas-subtle)] text-[var(--color-fg-default)]"

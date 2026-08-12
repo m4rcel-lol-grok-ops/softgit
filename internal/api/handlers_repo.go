@@ -423,15 +423,6 @@ func (s *Server) handleListHooks(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCreateHook(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
 }
-func (s *Server) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleAdminAuditLogs(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleAdminGetSettings(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]interface{}{})
-}
 
 // context import
 

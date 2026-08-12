@@ -231,6 +231,24 @@ func (s *Server) handleUploadAvatar(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, user)
 }
 
+
+// handleDeleteAvatar removes the current user's avatar.
+func (s *Server) handleDeleteAvatar(w http.ResponseWriter, r *http.Request) {
+	user := userFromContext(r.Context())
+	dir := filepath.Join(s.cfg.Storage.LocalPath, "avatars")
+	matches, _ := filepath.Glob(filepath.Join(dir, user.ID.String()+".*"))
+	for _, m := range matches {
+		_ = os.Remove(m)
+	}
+	_, err := s.db.Pool.Exec(r.Context(), `UPDATE users SET avatar_url = '', updated_at = NOW() WHERE id = $1`, user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "could not update profile")
+		return
+	}
+	user.AvatarURL = ""
+	writeJSON(w, http.StatusOK, user)
+}
+
 // handleServeAvatar serves stored avatar files.
 func (s *Server) handleServeAvatar(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "filename")

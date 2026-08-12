@@ -1,51 +1,14 @@
-# SoftGit – Host Caddy binary configuration
-#
-# Use this when Caddy is installed on the host (not inside Docker).
-# The backend stack runs via Docker Compose and exposes port 3000 on the host
-# (or on a specific interface).
-#
-# Typical flow:
-#   1. docker compose up -d          # starts postgres, redis, backend
-#   2. Copy this file to your Caddy config location, set your domain
-#   3. caddy reload  (or systemctl reload caddy)
-#
-# Network path:
-#   Internet → Host Caddy (443) → 127.0.0.1:3000 (backend container)
-
+# Replace with your domain or subdomain.
 git.example.com {
-	encode zstd gzip
-
-	header {
-		X-Content-Type-Options nosniff
-		X-Frame-Options DENY
-		Referrer-Policy strict-origin-when-cross-origin
-		-Server
+	handle /api/* {
+		reverse_proxy backend:3000
 	}
 
-	request_body {
-		max_size 2GB
+	handle /*.git* {
+		reverse_proxy backend:3000
 	}
 
-	reverse_proxy 127.0.0.1:3000 {
-		transport http {
-			read_timeout 3600s
-			write_timeout 3600s
-			dial_timeout 10s
-		}
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-Host {host}
-		flush_interval -1
-	}
-
-	log {
-		output stdout
-		format json
+	handle {
+		reverse_proxy frontend:80
 	}
 }
-
-# Optional: redirect bare domain or www
-# www.git.example.com {
-#     redir https://git.example.com{uri} permanent
-# }

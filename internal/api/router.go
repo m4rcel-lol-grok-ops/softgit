@@ -87,6 +87,7 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 			r.Get("/user", s.handleGetCurrentUser)
 			r.Patch("/user", s.handleUpdateCurrentUser)
 			r.Post("/user/avatar", s.handleUploadAvatar)
+			r.Delete("/user/avatar", s.handleDeleteAvatar)
 			r.Get("/user/ssh_keys", s.handleListSSHKeys)
 			r.Post("/user/ssh_keys", s.handleCreateSSHKey)
 			r.Delete("/user/ssh_keys/{id}", s.handleDeleteSSHKey)
@@ -120,9 +121,13 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 
 			r.Route("/admin", func(r chi.Router) {
 				r.Use(s.adminMiddleware)
+				r.Get("/stats", s.handleAdminStats)
 				r.Get("/users", s.handleAdminListUsers)
+				r.Patch("/users/{id}", s.handleAdminUpdateUser)
+				r.Get("/repositories", s.handleAdminListRepos)
 				r.Get("/audit_logs", s.handleAdminAuditLogs)
 				r.Get("/settings", s.handleAdminGetSettings)
+				r.Patch("/settings", s.handleAdminUpdateSettings)
 			})
 		})
 	})

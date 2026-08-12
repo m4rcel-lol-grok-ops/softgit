@@ -1,12 +1,13 @@
-import { useRef, useState, type FormEvent, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth, getErrorMessage } from '@/hooks/useAuth'
 import { updateCurrentUser } from '@/api/auth'
-import { uploadAvatar } from '@/api/repositories'
+import { uploadAvatar, deleteAvatar } from '@/api/repositories'
 import { Button, Input, Label, Textarea, Avatar } from '@/components/ui'
 import { resolveAvatarUrl } from '@/utils/avatar'
 import { cn } from '@/utils/cn'
+import { THEMES, applyTheme, getStoredThemeId, type ThemeId } from '@/themes'
 
 export function SettingsLayout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -16,6 +17,7 @@ export function SettingsLayout() {
 
   const links = [
     { to: '/settings/profile', label: 'Public profile' },
+    { to: '/settings/appearance', label: 'Appearance' },
     { to: '/settings/account', label: 'Account' },
     { to: '/settings/ssh-keys', label: 'SSH keys' },
     { to: '/settings/tokens', label: 'Access tokens' },
@@ -60,6 +62,15 @@ export function SettingsProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
 
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.display_name || '')
+      setBio(user.bio || '')
+      setWebsite(user.website || '')
+      setLocation(user.location || '')
+    }
+  }, [user])
+
   const mutation = useMutation({
     mutationFn: updateCurrentUser,
     onSuccess: () => {
@@ -78,6 +89,21 @@ export function SettingsProfilePage() {
     mutationFn: uploadAvatar,
     onSuccess: () => {
       setMessage('Profile picture updated.')
+      setError('')
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      refresh()
+      if (fileRef.current) fileRef.current.value = ''
+    },
+    onError: (err) => {
+      setError(getErrorMessage(err))
+      setMessage('')
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: () => {
+      setMessage('Profile picture removed.')
       setError('')
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       refresh()
@@ -108,6 +134,8 @@ export function SettingsProfilePage() {
     avatarMutation.mutate(file)
   }
 
+  const hasAvatar = Boolean(user?.avatar_url)
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 border-b border-[var(--color-border-default)] pb-2">
@@ -124,16 +152,20 @@ export function SettingsProfilePage() {
         </div>
       )}
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 p-4 border border-[var(--color-border-default)] rounded-md bg-[var(--color-canvas-subtle)]">
         <Avatar
           name={user?.username || 'user'}
           src={resolveAvatarUrl(user?.avatar_url)}
-          size={80}
-          className="rounded-full border border-[var(--color-border-default)]"
+          size={96}
+          className="rounded-full border border-[var(--color-border-default)] shrink-0"
         />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold mb-1">Profile picture</p>
-          <p className="text-xs text-[var(--color-fg-muted)] mb-2">PNG, JPG, GIF or WebP. Max 5MB.</p>
+          <p className="text-xs text-[var(--color-fg-muted)] mb-3">
+            {hasAvatar
+              ? 'You can replace your current picture or remove it.'
+              : 'Upload a picture so others can recognize you. PNG, JPG, GIF or WebP. Max 5MB.'}
+          </p>
           <input
             ref={fileRef}
             type="file"
@@ -141,15 +173,30 @@ export function SettingsProfilePage() {
             className="hidden"
             onChange={onAvatarChange}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            loading={avatarMutation.isPending}
-            onClick={() => fileRef.current?.click()}
-          >
-            Upload new picture
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              loading={avatarMutation.isPending}
+              onClick={() => fileRef.current?.click()}
+            >
+              {hasAvatar ? 'Change picture' : 'Upload picture'}
+            </Button>
+            {hasAvatar && (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                loading={deleteMutation.isPending}
+                onClick={() => {
+                  if (confirm('Remove your profile picture?')) deleteMutation.mutate()
+                }}
+              >
+                Delete picture
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -183,6 +230,72 @@ export function SettingsProfilePage() {
           ) with a <code className="text-xs">README.md</code>. It will be shown at the top of your
           profile page.
         </p>
+      </div>
+    </div>
+  )
+}
+
+export function SettingsAppearancePage() {
+  const [themeId, setThemeId] = useState<ThemeId>(() => getStoredThemeId())
+
+  const select = (id: ThemeId) => {
+    setThemeId(id)
+    applyTheme(id)
+  }
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-1 border-b border-[var(--color-border-default)] pb-2">
+        Appearance
+      </h2>
+      <p className="text-sm text-[var(--color-fg-muted)] mt-3 mb-4">
+        Choose any theme you like. Your preference is saved in this browser.
+      </p>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {THEMES.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => select(t.id)}
+            className={cn(
+              'text-left p-3 rounded-md border transition-colors',
+              themeId === t.id
+                ? 'border-[var(--color-accent-emphasis)] ring-2 ring-[var(--color-accent-emphasis)]/30'
+                : 'border-[var(--color-border-default)] hover:border-[var(--color-fg-muted)]'
+            )}
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="font-semibold text-sm">{t.label}</span>
+              {themeId === t.id && (
+                <span className="text-xs text-[var(--color-accent-fg)] font-medium">Active</span>
+              )}
+            </div>
+            <p className="text-xs text-[var(--color-fg-muted)]">{t.description}</p>
+            <div className="flex gap-1 mt-2">
+              {t.id === 'system' ? (
+                <>
+                  <span className="h-4 w-6 rounded-sm bg-white border border-[var(--color-border-default)]" />
+                  <span className="h-4 w-6 rounded-sm bg-[#0d1117] border border-[var(--color-border-default)]" />
+                </>
+              ) : (
+                <>
+                  <span
+                    className="h-4 w-6 rounded-sm border border-[var(--color-border-default)]"
+                    style={{ background: t.vars['--color-canvas-default'] || '#fff' }}
+                  />
+                  <span
+                    className="h-4 w-6 rounded-sm border border-[var(--color-border-default)]"
+                    style={{ background: t.vars['--color-accent-emphasis'] || '#0969da' }}
+                  />
+                  <span
+                    className="h-4 w-6 rounded-sm border border-[var(--color-border-default)]"
+                    style={{ background: t.vars['--color-fg-default'] || '#000' }}
+                  />
+                </>
+              )}
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   )

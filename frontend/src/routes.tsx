@@ -17,8 +17,17 @@ import { SearchPage } from '@/pages/SearchPage'
 import {
   SettingsLayout,
   SettingsProfilePage,
+  SettingsAppearancePage,
   SettingsPlaceholder,
 } from '@/pages/SettingsPage'
+import {
+  AdminLayout,
+  AdminOverviewPage,
+  AdminUsersPage,
+  AdminReposPage,
+  AdminSettingsPage,
+  AdminAuditPage,
+} from '@/pages/AdminPage'
 
 export function AppRoutes() {
   return (
@@ -34,12 +43,19 @@ export function AppRoutes() {
 
         <Route path="settings" element={<SettingsLayout />}>
           <Route path="profile" element={<SettingsProfilePage />} />
+          <Route path="appearance" element={<SettingsAppearancePage />} />
           <Route path="account" element={<SettingsPlaceholder title="Account" />} />
           <Route path="ssh-keys" element={<SettingsPlaceholder title="SSH keys" />} />
           <Route path="tokens" element={<SettingsPlaceholder title="Personal access tokens" />} />
         </Route>
 
-        <Route path="admin" element={<SettingsPlaceholder title="Administration" />} />
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="repositories" element={<AdminReposPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="audit" element={<AdminAuditPage />} />
+        </Route>
 
         <Route path=":owner/:repo" element={<RepoLayout />}>
           <Route index element={<RepoCodePage />} />
