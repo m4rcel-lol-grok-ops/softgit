@@ -1,0 +1,33 @@
+# Production overlay: adds Caddy reverse proxy with automatic HTTPS
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Requires DOMAIN and ideally email for Let's Encrypt in .env / environment.
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - softgit_caddy_data:/data
+      - softgit_caddy_config:/config
+    networks:
+      - softgit_public
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # In production we do not need to publish backend ports publicly
+  backend:
+    ports: []  # remove host port mapping; only reachable via internal network + Caddy
+
+volumes:
+  softgit_caddy_data:
+  softgit_caddy_config:

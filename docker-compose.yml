@@ -1,0 +1,97 @@
+# SoftGit - default / production-oriented Compose
+# Usage:
+#   cp .env.example .env
+#   # edit .env
+#   docker compose up -d
+#
+# This file runs: backend + postgres + redis
+# Caddy can be added via docker-compose.prod.yml or run on the host.
+
+name: softgit
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: softgit
+      POSTGRES_PASSWORD: softgit
+      POSTGRES_DB: softgit
+    volumes:
+      - softgit_postgres:/var/lib/postgresql/data
+    networks:
+      - softgit_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U softgit -d softgit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - softgit_redis:/data
+    networks:
+      - softgit_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: softgit:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://softgit:softgit@postgres:5432/softgit?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GIT_ROOT: /data/git
+      STORAGE_LOCAL_PATH: /data/storage
+      SSH_HOST_KEY_PATH: /data/ssh/ssh_host_ed25519_key
+      HTTP_PORT: "3000"
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+      - softgit_git:/data/git
+      - softgit_storage:/data/storage
+      - softgit_ssh:/data/ssh
+    ports:
+      # HTTP API (proxied by Caddy)
+      - "3000:3000"
+      # SSH Git (map host 22 or another port as needed)
+      - "2222:2222"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - softgit_internal
+      - softgit_public
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+networks:
+  softgit_internal:
+    driver: bridge
+    internal: true
+  softgit_public:
+    driver: bridge
+
+volumes:
+  softgit_postgres:
+  softgit_redis:
+  softgit_git:
+  softgit_storage:
+  softgit_ssh:

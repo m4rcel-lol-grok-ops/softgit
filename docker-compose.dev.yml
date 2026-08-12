@@ -1,0 +1,27 @@
+# Development overrides
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"  # expose for local tools
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: debug
+      LOG_FORMAT: text
+      REGISTRATION_ENABLED: "true"
+    volumes:
+      # Live code is not bind-mounted by default; rebuild for changes
+      - softgit_git:/data/git
+      - softgit_storage:/data/storage
+      - softgit_ssh:/data/ssh

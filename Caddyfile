@@ -1,0 +1,46 @@
+# SoftGit Caddy configuration (Docker mode)
+# Used when Caddy runs as a Compose service.
+# DOMAIN is injected via environment.
+
+{$DOMAIN:localhost} {
+	# Automatic HTTPS (Let's Encrypt when DOMAIN is a real public hostname)
+
+	encode zstd gzip
+
+	# Security headers
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Large bodies & long-running Git HTTP operations
+	request_body {
+		max_size 2GB
+	}
+
+	# Reverse proxy to backend
+	reverse_proxy backend:3000 {
+		# Timeouts suitable for Git pack operations
+		transport http {
+			read_timeout 3600s
+			write_timeout 3600s
+			dial_timeout 10s
+		}
+
+		# Forward real client info
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+
+		# WebSocket / SSE support (notifications, live updates)
+		flush_interval -1
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
