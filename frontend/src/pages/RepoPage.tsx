@@ -28,6 +28,7 @@ import {
 import { cn } from '@/utils/cn'
 import { formatDistanceToNow } from 'date-fns'
 import { Markdown } from '@/components/Markdown'
+import { VerifiedBadge } from '@/components/VerifiedBadge'
 
 export function RepoLayout() {
   const { owner = '', repo = '' } = useParams()
@@ -481,7 +482,7 @@ export function RepoCommitsPage() {
                 {c.subject}
               </Link>
               <div className="text-xs text-[var(--color-fg-muted)] mt-0.5">
-                {c.author} committed{' '}
+                {c.author}{c.verified && <VerifiedBadge size={12} className="ml-0.5" />} committed{' '}
                 {formatDistanceToNow(new Date(Number(c.date) * 1000), { addSuffix: true })}
               </div>
             </div>

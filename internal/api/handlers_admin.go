@@ -13,7 +13,7 @@ import (
 func (s *Server) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.Pool.Query(r.Context(), `
 		SELECT id, username, email, display_name, bio, avatar_url, website, location,
-		       is_admin, is_active, email_verified, created_at, updated_at, last_login_at
+		       is_admin, is_verified, is_active, email_verified, created_at, updated_at, last_login_at
 		FROM users
 		ORDER BY created_at DESC
 		LIMIT 500
@@ -28,7 +28,7 @@ func (s *Server) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 		var u models.User
 		if err := rows.Scan(
 			&u.ID, &u.Username, &u.Email, &u.DisplayName, &u.Bio, &u.AvatarURL, &u.Website, &u.Location,
-			&u.IsAdmin, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+			&u.IsAdmin, &u.IsVerified, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
 		); err != nil {
 			continue
 		}
@@ -45,8 +45,9 @@ func (s *Server) handleAdminUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		IsActive *bool `json:"is_active"`
-		IsAdmin  *bool `json:"is_admin"`
+		IsActive   *bool `json:"is_active"`
+		IsAdmin    *bool `json:"is_admin"`
+		IsVerified *bool `json:"is_verified"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", "invalid JSON")
@@ -71,14 +72,21 @@ func (s *Server) handleAdminUpdateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if body.IsVerified != nil {
+		_, err = s.db.Pool.Exec(r.Context(), `UPDATE users SET is_verified = $1, updated_at = NOW() WHERE id = $2`, *body.IsVerified, id)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal", "update failed")
+			return
+		}
+	}
 	var u models.User
 	err = s.db.Pool.QueryRow(r.Context(), `
 		SELECT id, username, email, display_name, bio, avatar_url, website, location,
-		       is_admin, is_active, email_verified, created_at, updated_at, last_login_at
+		       is_admin, is_verified, is_active, email_verified, created_at, updated_at, last_login_at
 		FROM users WHERE id = $1
 	`, id).Scan(
 		&u.ID, &u.Username, &u.Email, &u.DisplayName, &u.Bio, &u.AvatarURL, &u.Website, &u.Location,
-		&u.IsAdmin, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+		&u.IsAdmin, &u.IsVerified, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "not_found", "user not found")

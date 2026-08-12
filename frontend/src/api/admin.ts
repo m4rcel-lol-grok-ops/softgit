@@ -20,7 +20,7 @@ export async function listAdminUsers(): Promise<User[]> {
 
 export async function updateAdminUser(
   id: string,
-  payload: { is_active?: boolean; is_admin?: boolean }
+  payload: { is_active?: boolean; is_admin?: boolean; is_verified?: boolean }
 ): Promise<User> {
   const { data } = await apiClient.patch<User>(`/admin/users/${id}`, payload)
   return data

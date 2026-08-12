@@ -247,6 +247,18 @@ func (s *Server) handleListCommits(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
+	// Enrich with SoftGit verified status when commit email matches a user
+	for i := range commits {
+		var username string
+		var verified bool
+		err := s.db.Pool.QueryRow(r.Context(), `
+			SELECT username, is_verified FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1
+		`, commits[i].Email).Scan(&username, &verified)
+		if err == nil {
+			commits[i].Username = username
+			commits[i].Verified = verified
+		}
+	}
 	writeJSON(w, http.StatusOK, commits)
 }
 

@@ -118,11 +118,11 @@ func (s *Server) getUserByID(ctx context.Context, id uuid.UUID) (*models.User, e
 	u := &models.User{}
 	err := s.db.Pool.QueryRow(ctx, `
 		SELECT id, username, email, display_name, bio, avatar_url, website, location,
-		       password_hash, is_admin, is_active, email_verified, created_at, updated_at, last_login_at
+		       password_hash, is_admin, is_verified, is_active, email_verified, created_at, updated_at, last_login_at
 		FROM users WHERE id = $1 AND is_active = TRUE
 	`, id).Scan(
 		&u.ID, &u.Username, &u.Email, &u.DisplayName, &u.Bio, &u.AvatarURL, &u.Website, &u.Location,
-		&u.PasswordHash, &u.IsAdmin, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+		&u.PasswordHash, &u.IsAdmin, &u.IsVerified, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
 	)
 	if err != nil {
 		return nil, err
@@ -134,11 +134,11 @@ func (s *Server) getUserByUsername(ctx context.Context, username string) (*model
 	u := &models.User{}
 	err := s.db.Pool.QueryRow(ctx, `
 		SELECT id, username, email, display_name, bio, avatar_url, website, location,
-		       password_hash, is_admin, is_active, email_verified, created_at, updated_at, last_login_at
+		       password_hash, is_admin, is_verified, is_active, email_verified, created_at, updated_at, last_login_at
 		FROM users WHERE LOWER(username) = LOWER($1) AND is_active = TRUE
 	`, username).Scan(
 		&u.ID, &u.Username, &u.Email, &u.DisplayName, &u.Bio, &u.AvatarURL, &u.Website, &u.Location,
-		&u.PasswordHash, &u.IsAdmin, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+		&u.PasswordHash, &u.IsAdmin, &u.IsVerified, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
 	)
 	if err != nil {
 		return nil, err
@@ -209,11 +209,11 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		u := &models.User{}
 		err := s.db.Pool.QueryRow(r.Context(), `
 			SELECT id, username, email, display_name, bio, avatar_url, website, location,
-			       password_hash, is_admin, is_active, email_verified, created_at, updated_at, last_login_at
+			       password_hash, is_admin, is_verified, is_active, email_verified, created_at, updated_at, last_login_at
 			FROM users WHERE LOWER(email) = LOWER($1) AND is_active = TRUE
 		`, req.Login).Scan(
 			&u.ID, &u.Username, &u.Email, &u.DisplayName, &u.Bio, &u.AvatarURL, &u.Website, &u.Location,
-			&u.PasswordHash, &u.IsAdmin, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+			&u.PasswordHash, &u.IsAdmin, &u.IsVerified, &u.IsActive, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
 		)
 		if err == nil {
 			user = u

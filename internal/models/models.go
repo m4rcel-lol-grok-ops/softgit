@@ -38,6 +38,7 @@ type User struct {
 	Location      string     `json:"location,omitempty"`
 	PasswordHash  string     `json:"-"`
 	IsAdmin       bool       `json:"is_admin"`
+	IsVerified    bool       `json:"is_verified"`
 	IsActive      bool       `json:"is_active"`
 	EmailVerified bool       `json:"email_verified"`
 	CreatedAt     time.Time  `json:"created_at"`

@@ -1,0 +1,2 @@
+export const SITE_NAME = import.meta.env.VITE_SITE_NAME || 'SoftGit'
+export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'

@@ -8,6 +8,7 @@ export interface User {
   website?: string
   location?: string
   is_admin: boolean
+  is_verified: boolean
   is_active: boolean
   email_verified: boolean
   created_at: string
@@ -46,6 +47,8 @@ export interface CommitInfo {
   email: string
   date: string
   subject: string
+  username?: string
+  verified?: boolean
 }
 
 export interface TreeEntry {

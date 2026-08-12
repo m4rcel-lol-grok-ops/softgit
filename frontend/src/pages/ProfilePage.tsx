@@ -6,6 +6,7 @@ import { Markdown } from '@/components/Markdown'
 import { getErrorMessage } from '@/api/client'
 import { resolveAvatarUrl } from '@/utils/avatar'
 import { MapPin, Link as LinkIcon, Calendar, BookMarked, Lock, Star } from 'lucide-react'
+import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { format, formatDistanceToNow } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -56,8 +57,9 @@ export function ProfilePage() {
             size={260}
             className="rounded-full w-full max-w-[260px] aspect-square mb-4 border border-[var(--color-border-default)]"
           />
-          <h1 className="text-2xl font-semibold leading-tight">
+          <h1 className="text-2xl font-semibold leading-tight inline-flex items-center gap-1.5 flex-wrap">
             {user.display_name || user.username}
+            {user.is_verified && <VerifiedBadge size={20} />}
           </h1>
           <p className="text-xl text-[var(--color-fg-muted)] font-light mb-3">{user.username}</p>
           {user.bio && <p className="text-sm mb-3 whitespace-pre-wrap">{user.bio}</p>}

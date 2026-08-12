@@ -11,6 +11,7 @@ import {
   listAuditLogs,
 } from '@/api/admin'
 import { Button, Spinner, Badge, Input, Label } from '@/components/ui'
+import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { cn } from '@/utils/cn'
 import { useState } from 'react'
 import { format } from 'date-fns'
@@ -108,7 +109,7 @@ export function AdminUsersPage() {
   const qc = useQueryClient()
   const { data: users, isLoading } = useQuery({ queryKey: ['admin', 'users'], queryFn: listAdminUsers })
   const mutation = useMutation({
-    mutationFn: ({ id, ...payload }: { id: string; is_active?: boolean; is_admin?: boolean }) =>
+    mutationFn: ({ id, ...payload }: { id: string; is_active?: boolean; is_admin?: boolean; is_verified?: boolean }) =>
       updateAdminUser(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
@@ -139,8 +140,9 @@ export function AdminUsersPage() {
             {(users || []).map((u) => (
               <tr key={u.id}>
                 <td className="px-3 py-2">
-                  <Link to={`/${u.username}`} className="font-semibold text-[var(--color-accent-fg)]">
+                  <Link to={`/${u.username}`} className="font-semibold text-[var(--color-accent-fg)] inline-flex items-center gap-1">
                     {u.username}
+                    {u.is_verified && <VerifiedBadge size={14} />}
                   </Link>
                   <div className="text-xs text-[var(--color-fg-muted)]">{u.display_name}</div>
                 </td>
@@ -170,6 +172,14 @@ export function AdminUsersPage() {
                       onClick={() => mutation.mutate({ id: u.id, is_admin: !u.is_admin })}
                     >
                       {u.is_admin ? 'Revoke admin' : 'Make admin'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={mutation.isPending}
+                      onClick={() => mutation.mutate({ id: u.id, is_verified: !u.is_verified })}
+                    >
+                      {u.is_verified ? 'Unverify' : 'Verify'}
                     </Button>
                   </div>
                 </td>

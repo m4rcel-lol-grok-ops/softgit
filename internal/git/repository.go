@@ -297,11 +297,13 @@ func (m *Manager) Log(owner, name, rev string, limit int) ([]CommitInfo, error) 
 }
 
 type CommitInfo struct {
-	SHA     string `json:"sha"`
-	Author  string `json:"author"`
-	Email   string `json:"email"`
-	Date    string `json:"date"`
-	Subject string `json:"subject"`
+	SHA      string `json:"sha"`
+	Author   string `json:"author"`
+	Email    string `json:"email"`
+	Date     string `json:"date"`
+	Subject  string `json:"subject"`
+	Username string `json:"username,omitempty"`
+	Verified bool   `json:"verified,omitempty"`
 }
 
 // CatFile returns the content of a blob at path in the given tree-ish.
