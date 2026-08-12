@@ -161,7 +161,7 @@ func (s *Server) runGitCommand(channel gossh.Channel, cmdLine string) {
 
 	var cmd *exec.Cmd
 	switch gitCmd {
-	case "git-upload-pack", "git-upload-pack":
+	case "git-upload-pack":
 		cmd = exec.Command("git", "upload-pack", path)
 	case "git-receive-pack":
 		cmd = exec.Command("git", "receive-pack", path)
