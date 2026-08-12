@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth, getErrorMessage } from '@/hooks/useAuth'
 import { updateCurrentUser } from '@/api/auth'
-import { Button, Input, Label, Textarea } from '@/components/ui'
+import { uploadAvatar } from '@/api/repositories'
+import { Button, Input, Label, Textarea, Avatar } from '@/components/ui'
+import { resolveAvatarUrl } from '@/utils/avatar'
 import { cn } from '@/utils/cn'
 
 export function SettingsLayout() {
@@ -55,12 +57,27 @@ export function SettingsProfilePage() {
   const [location, setLocation] = useState(user?.location || '')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
     mutationFn: updateCurrentUser,
     onSuccess: () => {
       setMessage('Profile updated successfully.')
+      setError('')
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      refresh()
+    },
+    onError: (err) => {
+      setError(getErrorMessage(err))
+      setMessage('')
+    },
+  })
+
+  const avatarMutation = useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: () => {
+      setMessage('Profile picture updated.')
       setError('')
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       refresh()
@@ -81,6 +98,16 @@ export function SettingsProfilePage() {
     })
   }
 
+  const onAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Avatar must be 5MB or smaller.')
+      return
+    }
+    avatarMutation.mutate(file)
+  }
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 border-b border-[var(--color-border-default)] pb-2">
@@ -96,6 +123,36 @@ export function SettingsProfilePage() {
           {error}
         </div>
       )}
+
+      <div className="flex items-center gap-4 mb-6">
+        <Avatar
+          name={user?.username || 'user'}
+          src={resolveAvatarUrl(user?.avatar_url)}
+          size={80}
+          className="rounded-full border border-[var(--color-border-default)]"
+        />
+        <div>
+          <p className="text-sm font-semibold mb-1">Profile picture</p>
+          <p className="text-xs text-[var(--color-fg-muted)] mb-2">PNG, JPG, GIF or WebP. Max 5MB.</p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            className="hidden"
+            onChange={onAvatarChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={avatarMutation.isPending}
+            onClick={() => fileRef.current?.click()}
+          >
+            Upload new picture
+          </Button>
+        </div>
+      </div>
+
       <form onSubmit={onSubmit} className="space-y-4 max-w-md">
         <div>
           <Label htmlFor="display_name">Name</Label>
@@ -117,6 +174,16 @@ export function SettingsProfilePage() {
           Update profile
         </Button>
       </form>
+
+      <div className="mt-8 p-4 border border-[var(--color-border-default)] rounded-md bg-[var(--color-canvas-subtle)] text-sm max-w-lg">
+        <p className="font-semibold mb-1">Profile README</p>
+        <p className="text-[var(--color-fg-muted)]">
+          Create a public repository named the same as your username (
+          <code className="text-xs">{user?.username}/{user?.username}</code>
+          ) with a <code className="text-xs">README.md</code>. It will be shown at the top of your
+          profile page.
+        </p>
+      </div>
     </div>
   )
 }
@@ -128,7 +195,8 @@ export function SettingsPlaceholder({ title }: { title: string }) {
         {title}
       </h2>
       <p className="text-sm text-[var(--color-fg-muted)]">
-        This section is wired for backend support. Controls will appear when the corresponding API endpoints are fully available.
+        This section is wired for backend support. Controls will appear when the corresponding API
+        endpoints are fully available.
       </p>
     </div>
   )

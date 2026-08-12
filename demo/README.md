@@ -2,7 +2,7 @@
 
 Captured from a live local run of the SoftGit backend + React frontend.
 
-Test data was created for the screenshots and **removed afterward** so the repository stays clean.
+Test data used for screenshots is **not** committed (database and git storage were wiped after capture).
 
 ## Screenshots
 
@@ -11,24 +11,26 @@ Test data was created for the screenshots and **removed afterward** so the repos
 | `01-landing.png` | Logged-out landing page |
 | `02-login.png` | Sign-in form |
 | `03-register.png` | Registration form |
-| `04-dashboard.png` | Authenticated home / dashboard |
-| `05-repo-code.png` | Repository code tab (`alice/hello-world`) |
+| `04-dashboard.png` | Authenticated home with repository list |
+| `05-repo-code.png` | Repository code browser |
 | `06-commits.png` | Commit history |
 | `07-issues.png` | Issues tab |
 | `08-pulls.png` | Pull requests tab |
 | `09-repo-settings.png` | Repository settings |
-| `10-profile.png` | User profile (`alice`) |
-| `11-settings-profile.png` | User settings – public profile |
+| `10-profile.png` | User profile (avatar, profile README, repos) |
+| `11-settings-profile.png` | Settings – profile + avatar upload |
 | `12-new-repo.png` | Create repository form |
 | `13-search.png` | Global search |
 | `14-repo-dark.png` | Repository page in dark theme |
-| `15-mobile-dashboard.png` | Mobile viewport – dashboard |
-| `16-mobile-repo.png` | Mobile viewport – repository |
-| `17-repo-folder.png` | Repository folder browse |
-| `18-docs-repo.png` | Second repository (`softgit-docs`) |
+| `15-mobile-dashboard.png` | Mobile dashboard |
+| `16-mobile-repo.png` | Mobile repository |
+| `17-repo-folder.png` | Folder browse |
+| `18-docs-repo.png` | Additional repository |
+| `19-profile-repo.png` | Profile repository (`username/username`) when available |
 
-## Notes
+## Notable features
 
-- Theme: light (default) and dark (`14-repo-dark.png`)
-- Responsive: desktop 1440×900 and mobile 390×844
-- No production secrets or real user data are included
+- **Avatar upload** – Settings → Public profile
+- **Profile README** – Public repo named the same as your username (`alice/alice`) with `README.md`
+- **Repo list** – Dashboard and profile pages
+- **Public API reads** – Public repos readable without login

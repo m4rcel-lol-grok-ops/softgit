@@ -1,28 +1,34 @@
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
-import { Button, EmptyState } from '@/components/ui'
-import { BookMarked, Plus } from 'lucide-react'
+import { listMyRepos } from '@/api/repositories'
+import { Button, EmptyState, Spinner, Badge } from '@/components/ui'
+import { BookMarked, Plus, Lock, Star } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 
 export function DashboardPage() {
   const { user, isAuthenticated } = useAuth()
+
+  const { data: repos, isLoading } = useQuery({
+    queryKey: ['my-repos'],
+    queryFn: listMyRepos,
+    enabled: isAuthenticated,
+  })
 
   if (!isAuthenticated) {
     return (
       <div className="max-w-[1280px] mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-semibold mb-3">Where software is built</h1>
         <p className="text-[var(--color-fg-muted)] mb-6 max-w-lg mx-auto">
-          SoftGit is a self-hosted Git hosting platform. Sign in to manage repositories, issues, and pull requests.
+          SoftGit is a self-hosted Git hosting platform. Sign in to manage repositories, issues, and
+          pull requests.
         </p>
         <div className="flex gap-3 justify-center">
           <Link to="/register">
-            <Button variant="primary" size="lg">
-              Sign up
-            </Button>
+            <Button variant="primary" size="lg">Sign up</Button>
           </Link>
           <Link to="/login">
-            <Button variant="outline" size="lg">
-              Sign in
-            </Button>
+            <Button variant="outline" size="lg">Sign in</Button>
           </Link>
         </div>
       </div>
@@ -45,19 +51,56 @@ export function DashboardPage() {
           <div className="border border-[var(--color-border-default)] rounded-md">
             <div className="px-4 py-3 border-b border-[var(--color-border-default)] font-semibold text-sm flex items-center gap-2">
               <BookMarked size={16} />
-              Top repositories
+              Your repositories
             </div>
-            <EmptyState
-              title="No repositories yet"
-              description="Create your first repository to get started with SoftGit."
-              action={
-                <Link to="/new">
-                  <Button variant="primary" size="sm">
-                    Create repository
-                  </Button>
-                </Link>
-              }
-            />
+            {isLoading && (
+              <div className="flex justify-center py-10"><Spinner /></div>
+            )}
+            {!isLoading && (!repos || repos.length === 0) && (
+              <EmptyState
+                title="No repositories yet"
+                description="Create your first repository to get started with SoftGit."
+                action={
+                  <Link to="/new">
+                    <Button variant="primary" size="sm">Create repository</Button>
+                  </Link>
+                }
+              />
+            )}
+            {repos && repos.length > 0 && (
+              <ul className="divide-y divide-[var(--color-border-muted)]">
+                {repos.map((repo) => (
+                  <li key={repo.id}>
+                    <Link
+                      to={`/${repo.owner_name}/${repo.name}`}
+                      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--color-canvas-subtle)] no-underline text-[var(--color-fg-default)] hover:no-underline"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[var(--color-accent-fg)] truncate">{repo.name}</span>
+                          <Badge variant={repo.visibility === 'private' ? 'attention' : 'default'}>
+                            {repo.visibility === 'private' ? (
+                              <span className="inline-flex items-center gap-0.5"><Lock size={10} /> private</span>
+                            ) : 'public'}
+                          </Badge>
+                        </div>
+                        {repo.description && (
+                          <p className="text-xs text-[var(--color-fg-muted)] truncate mt-0.5">{repo.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-[var(--color-fg-muted)] shrink-0">
+                        <span className="inline-flex items-center gap-1"><Star size={12} /> {repo.stars_count}</span>
+                        {repo.updated_at && (
+                          <span className="hidden sm:inline">
+                            {formatDistanceToNow(new Date(repo.updated_at), { addSuffix: true })}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="mt-6 border border-[var(--color-border-default)] rounded-md">
@@ -75,18 +118,14 @@ export function DashboardPage() {
           <div className="border border-[var(--color-border-default)] rounded-md p-4">
             <h2 className="text-sm font-semibold mb-2">Welcome, {user?.display_name || user?.username}</h2>
             <p className="text-xs text-[var(--color-fg-muted)] mb-3">
-              Get started by creating a repository or exploring public projects.
+              Get started by creating a repository or setting up a profile README.
             </p>
             <div className="flex flex-col gap-2">
               <Link to="/new">
-                <Button variant="outline" size="sm" className="w-full">
-                  Create repository
-                </Button>
+                <Button variant="outline" size="sm" className="w-full">Create repository</Button>
               </Link>
-              <Link to="/explore">
-                <Button variant="ghost" size="sm" className="w-full">
-                  Explore
-                </Button>
+              <Link to={`/${user?.username}`}>
+                <Button variant="ghost" size="sm" className="w-full">Your profile</Button>
               </Link>
             </div>
           </div>

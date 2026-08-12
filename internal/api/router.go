@@ -33,7 +33,7 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 	r.Use(cors.Handler(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool { return true },
+		AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-ID"},
 		ExposedHeaders:   []string{"Link", "X-Request-ID", "X-Total-Count"},
@@ -59,14 +59,34 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 		r.Post("/auth/logout", s.handleLogout)
 		r.Get("/auth/me", s.handleMe)
 
+		// Public user endpoints
 		r.Get("/users/{username}", s.handleGetUser)
+		r.Get("/users/{username}/repos", s.handleListUserRepos)
+		r.Get("/users/{username}/profile-readme", s.handleProfileReadme)
 		r.Get("/search", s.handleSearch)
+
+		// Public avatar files
+		r.Get("/avatars/{filename}", s.handleServeAvatar)
+
+		// Public repository read (visibility checked inside)
+		r.Get("/repos/{owner}/{repo}", s.handleGetRepoPublic)
+		r.Get("/repos/{owner}/{repo}/branches", s.handleListBranches)
+		r.Get("/repos/{owner}/{repo}/tags", s.handleListTags)
+		r.Get("/repos/{owner}/{repo}/commits", s.handleListCommits)
+		r.Get("/repos/{owner}/{repo}/contents", s.handleGetContents)
+		r.Get("/repos/{owner}/{repo}/contents/*", s.handleGetContents)
+		r.Get("/repos/{owner}/{repo}/raw/*", s.handleGetRaw)
+		r.Get("/repos/{owner}/{repo}/archive/{ref}.{format}", s.handleArchive)
+		r.Get("/repos/{owner}/{repo}/issues", s.handleListIssues)
+		r.Get("/repos/{owner}/{repo}/pulls", s.handleListPulls)
+		r.Get("/repos/{owner}/{repo}/releases", s.handleListReleases)
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.authMiddleware)
 
 			r.Get("/user", s.handleGetCurrentUser)
 			r.Patch("/user", s.handleUpdateCurrentUser)
+			r.Post("/user/avatar", s.handleUploadAvatar)
 			r.Get("/user/ssh_keys", s.handleListSSHKeys)
 			r.Post("/user/ssh_keys", s.handleCreateSSHKey)
 			r.Delete("/user/ssh_keys/{id}", s.handleDeleteSSHKey)
@@ -74,35 +94,25 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 			r.Post("/user/tokens", s.handleCreateToken)
 			r.Delete("/user/tokens/{id}", s.handleDeleteToken)
 
+			r.Get("/user/repos", s.handleListMyRepos)
 			r.Post("/user/repos", s.handleCreateUserRepo)
-			r.Get("/repos/{owner}/{repo}", s.handleGetRepo)
 			r.Patch("/repos/{owner}/{repo}", s.handleUpdateRepo)
 			r.Delete("/repos/{owner}/{repo}", s.handleDeleteRepo)
 			r.Post("/repos/{owner}/{repo}/transfer", s.handleTransferRepo)
 			r.Post("/repos/{owner}/{repo}/rename", s.handleRenameRepo)
 
-			r.Get("/repos/{owner}/{repo}/branches", s.handleListBranches)
-			r.Get("/repos/{owner}/{repo}/tags", s.handleListTags)
-			r.Get("/repos/{owner}/{repo}/commits", s.handleListCommits)
-			r.Get("/repos/{owner}/{repo}/contents/*", s.handleGetContents)
-			r.Get("/repos/{owner}/{repo}/raw/*", s.handleGetRaw)
-			r.Get("/repos/{owner}/{repo}/archive/{ref}.{format}", s.handleArchive)
-
 			r.Put("/user/starred/{owner}/{repo}", s.handleStarRepo)
 			r.Delete("/user/starred/{owner}/{repo}", s.handleUnstarRepo)
 
-			r.Get("/repos/{owner}/{repo}/issues", s.handleListIssues)
 			r.Post("/repos/{owner}/{repo}/issues", s.handleCreateIssue)
 			r.Get("/repos/{owner}/{repo}/issues/{number}", s.handleGetIssue)
 			r.Patch("/repos/{owner}/{repo}/issues/{number}", s.handleUpdateIssue)
 			r.Post("/repos/{owner}/{repo}/issues/{number}/comments", s.handleCreateIssueComment)
 
-			r.Get("/repos/{owner}/{repo}/pulls", s.handleListPulls)
 			r.Post("/repos/{owner}/{repo}/pulls", s.handleCreatePull)
 			r.Get("/repos/{owner}/{repo}/pulls/{number}", s.handleGetPull)
 			r.Put("/repos/{owner}/{repo}/pulls/{number}/merge", s.handleMergePull)
 
-			r.Get("/repos/{owner}/{repo}/releases", s.handleListReleases)
 			r.Post("/repos/{owner}/{repo}/releases", s.handleCreateRelease)
 
 			r.Get("/repos/{owner}/{repo}/hooks", s.handleListHooks)

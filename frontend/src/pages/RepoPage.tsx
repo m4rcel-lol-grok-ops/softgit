@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { formatDistanceToNow } from 'date-fns'
+import { Markdown } from '@/components/Markdown'
 
 export function RepoLayout() {
   const { owner = '', repo = '' } = useParams()
@@ -333,6 +334,48 @@ export function RepoCodePage() {
           <pre className="p-4 text-xs overflow-x-auto font-mono whitespace-pre bg-[var(--color-canvas-default)]">
             {contents.content}
           </pre>
+        )}
+      </div>
+
+      {/* Root README */}
+      {!path && contents?.type === 'dir' && (
+        <RepoReadme owner={owner} repo={repo} branch={branch} entries={contents.entries || []} />
+      )}
+    </div>
+  )
+}
+
+function RepoReadme({
+  owner,
+  repo,
+  branch,
+  entries,
+}: {
+  owner: string
+  repo: string
+  branch: string
+  entries: { path: string; type: string }[]
+}) {
+  const readmeEntry = entries.find((e) => {
+    const name = e.path.includes('/') ? e.path.slice(e.path.lastIndexOf('/') + 1) : e.path
+    return /^readme\.(md|markdown|txt)$/i.test(name)
+  })
+  const { data } = useQuery({
+    queryKey: ['readme', owner, repo, branch, readmeEntry?.path],
+    queryFn: () => getContents(owner, repo, readmeEntry!.path, branch),
+    enabled: !!readmeEntry,
+  })
+  if (!readmeEntry || !data?.content) return null
+  return (
+    <div className="mt-4 border border-[var(--color-border-default)] rounded-md overflow-hidden">
+      <div className="px-4 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)] text-sm font-semibold">
+        {readmeEntry.path}
+      </div>
+      <div className="px-4 py-4">
+        {/\.md$/i.test(readmeEntry.path) ? (
+          <Markdown content={data.content} />
+        ) : (
+          <pre className="text-xs whitespace-pre-wrap font-mono">{data.content}</pre>
         )}
       </div>
     </div>

@@ -81,3 +81,37 @@ export async function search(q: string) {
   const { data } = await apiClient.get('/search', { params: { q } })
   return data
 }
+
+export async function listUserRepos(username: string): Promise<Repository[]> {
+  const { data } = await apiClient.get<Repository[]>(`/users/${username}/repos`)
+  return data
+}
+
+export async function listMyRepos(): Promise<Repository[]> {
+  const { data } = await apiClient.get<Repository[]>('/user/repos')
+  return data
+}
+
+export async function getProfileReadme(username: string): Promise<{
+  name: string
+  path: string
+  content: string
+  encoding: string
+  repo: string
+} | null> {
+  try {
+    const { data } = await apiClient.get(`/users/${username}/profile-readme`)
+    return data
+  } catch {
+    return null
+  }
+}
+
+export async function uploadAvatar(file: File): Promise<import('@/types').User> {
+  const form = new FormData()
+  form.append('avatar', file)
+  const { data } = await apiClient.post('/user/avatar', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}

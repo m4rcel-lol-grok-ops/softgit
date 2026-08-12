@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Avatar, Button } from '@/components/ui'
+import { resolveAvatarUrl } from '@/utils/avatar'
 import {
   Bell,
   BookMarked,
@@ -124,7 +125,7 @@ export function AppShell() {
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     aria-label="User menu"
                   >
-                    <Avatar name={user.username} src={user.avatar_url} size={28} />
+                    <Avatar name={user.username} src={resolveAvatarUrl(user.avatar_url)} size={28} />
                     <ChevronDown size={14} className="text-[var(--color-fg-muted)]" />
                   </button>
                   {userMenuOpen && (
