@@ -15,11 +15,14 @@ import {
 } from '@/pages/RepoPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { SearchPage } from '@/pages/SearchPage'
+import { ExplorePage } from '@/pages/ExplorePage'
 import {
   SettingsLayout,
   SettingsProfilePage,
   SettingsAppearancePage,
   SettingsPlaceholder,
+  SettingsSSHKeysPage,
+  SettingsTokensPage,
 } from '@/pages/SettingsPage'
 import {
   AdminLayout,
@@ -37,7 +40,7 @@ export function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
-        <Route path="explore" element={<DashboardPage />} />
+        <Route path="explore" element={<ExplorePage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="new" element={<NewRepoPage />} />
         <Route path="notifications" element={<DashboardPage />} />
@@ -46,8 +49,8 @@ export function AppRoutes() {
           <Route path="profile" element={<SettingsProfilePage />} />
           <Route path="appearance" element={<SettingsAppearancePage />} />
           <Route path="account" element={<SettingsPlaceholder title="Account" />} />
-          <Route path="ssh-keys" element={<SettingsPlaceholder title="SSH keys" />} />
-          <Route path="tokens" element={<SettingsPlaceholder title="Personal access tokens" />} />
+          <Route path="ssh-keys" element={<SettingsSSHKeysPage />} />
+          <Route path="tokens" element={<SettingsTokensPage />} />
         </Route>
 
         <Route path="admin" element={<AdminLayout />}>

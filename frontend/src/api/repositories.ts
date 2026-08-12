@@ -120,3 +120,94 @@ export async function deleteAvatar(): Promise<import('@/types').User> {
   const { data } = await apiClient.delete('/user/avatar')
   return data
 }
+
+export async function starRepository(owner: string, repo: string): Promise<void> {
+  await apiClient.put(`/user/starred/${owner}/${repo}`)
+}
+
+export async function unstarRepository(owner: string, repo: string): Promise<void> {
+  await apiClient.delete(`/user/starred/${owner}/${repo}`)
+}
+
+export async function isStarred(owner: string, repo: string): Promise<boolean> {
+  try {
+    const { data } = await apiClient.get<{ starred: boolean }>(`/user/starred/${owner}/${repo}`)
+    return data.starred
+  } catch {
+    return false
+  }
+}
+
+export async function exploreRepos() {
+  const { data } = await apiClient.get('/explore/repos')
+  return data as Array<{
+    owner_name: string
+    name: string
+    full_name: string
+    description: string
+    stars_count: number
+    forks_count: number
+    updated_at: string
+  }>
+}
+
+export async function listIssues(owner: string, repo: string, state = 'open') {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/issues`, { params: { state } })
+  return data as Array<{
+    number: number
+    title: string
+    body: string
+    state: string
+    author: { username: string; is_verified: boolean }
+    comments_count: number
+    created_at: string
+  }>
+}
+
+export async function createIssue(owner: string, repo: string, payload: { title: string; body?: string }) {
+  const { data } = await apiClient.post(`/repos/${owner}/${repo}/issues`, payload)
+  return data
+}
+
+export async function updateIssue(
+  owner: string,
+  repo: string,
+  number: number,
+  payload: { title?: string; body?: string; state?: string }
+) {
+  const { data } = await apiClient.patch(`/repos/${owner}/${repo}/issues/${number}`, payload)
+  return data
+}
+
+export async function listReleases(owner: string, repo: string) {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/releases`)
+  return data as Array<{
+    id: string
+    tag_name: string
+    name: string
+    body: string
+    draft: boolean
+    prerelease: boolean
+    verified?: boolean
+    author: { username: string; is_verified: boolean }
+    created_at: string
+  }>
+}
+
+export async function createRelease(
+  owner: string,
+  repo: string,
+  payload: { tag_name: string; name?: string; body?: string; prerelease?: boolean }
+) {
+  const { data } = await apiClient.post(`/repos/${owner}/${repo}/releases`, payload)
+  return data
+}
+
+export async function searchAll(q: string) {
+  const { data } = await apiClient.get('/search', { params: { q } })
+  return data as {
+    query: string
+    users: Array<{ username: string; display_name: string; is_verified: boolean; avatar_url?: string }>
+    repositories: Array<{ full_name: string; description: string; stars_count: number; owner_name: string; name: string }>
+  }
+}

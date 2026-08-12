@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth, getErrorMessage } from '@/hooks/useAuth'
 import { updateCurrentUser } from '@/api/auth'
 import { uploadAvatar, deleteAvatar } from '@/api/repositories'
-import { Button, Input, Label, Textarea, Avatar } from '@/components/ui'
+import { Button, Input, Label, Textarea, Avatar, Spinner } from '@/components/ui'
 import { resolveAvatarUrl } from '@/utils/avatar'
 import { cn } from '@/utils/cn'
 import { THEMES, applyTheme, getStoredThemeId, type ThemeId } from '@/themes'
@@ -311,6 +311,179 @@ export function SettingsPlaceholder({ title }: { title: string }) {
         This section is wired for backend support. Controls will appear when the corresponding API
         endpoints are fully available.
       </p>
+    </div>
+  )
+}
+
+
+export function SettingsSSHKeysPage() {
+  const [title, setTitle] = useState('')
+  const [key, setKey] = useState('')
+  const [error, setError] = useState('')
+  const [msg, setMsg] = useState('')
+  const qc = useQueryClient()
+  const { data: keys, isLoading } = useQuery({
+    queryKey: ['ssh-keys'],
+    queryFn: async () => {
+      const { listSSHKeys } = await import('@/api/settings')
+      return listSSHKeys()
+    },
+  })
+  const createMut = useMutation({
+    mutationFn: async () => {
+      const { createSSHKey } = await import('@/api/settings')
+      return createSSHKey({ title, public_key: key })
+    },
+    onSuccess: () => {
+      setMsg('SSH key added.')
+      setError('')
+      setTitle('')
+      setKey('')
+      qc.invalidateQueries({ queryKey: ['ssh-keys'] })
+    },
+    onError: (e) => setError(getErrorMessage(e)),
+  })
+  const delMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { deleteSSHKey } = await import('@/api/settings')
+      return deleteSSHKey(id)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ssh-keys'] }),
+  })
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4 border-b border-[var(--color-border-default)] pb-2">
+        SSH keys
+      </h2>
+      <p className="text-sm text-[var(--color-fg-muted)] mb-4">
+        Keys used to authenticate Git over SSH.
+      </p>
+      {msg && <p className="text-sm text-[var(--color-success-fg)] mb-2">{msg}</p>}
+      {error && <p className="text-sm text-[var(--color-danger-fg)] mb-2">{error}</p>}
+      {isLoading && <Spinner />}
+      <ul className="space-y-2 mb-6">
+        {(keys || []).map((k) => (
+          <li
+            key={k.id}
+            className="border border-[var(--color-border-default)] rounded-md p-3 flex flex-wrap items-center justify-between gap-2 text-sm"
+          >
+            <div>
+              <div className="font-semibold">{k.title}</div>
+              <code className="text-xs text-[var(--color-fg-muted)]">{k.fingerprint}</code>
+            </div>
+            <Button size="sm" variant="danger" onClick={() => delMut.mutate(k.id)}>
+              Delete
+            </Button>
+          </li>
+        ))}
+        {!isLoading && (!keys || keys.length === 0) && (
+          <li className="text-sm text-[var(--color-fg-muted)]">No SSH keys yet.</li>
+        )}
+      </ul>
+      <h3 className="font-semibold text-sm mb-2">Add a new SSH key</h3>
+      <div className="space-y-3 max-w-lg">
+        <div>
+          <Label htmlFor="ssh-title">Title</Label>
+          <Input id="ssh-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Work laptop" />
+        </div>
+        <div>
+          <Label htmlFor="ssh-key">Key</Label>
+          <Textarea
+            id="ssh-key"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="ssh-ed25519 AAAA... comment"
+            className="font-mono text-xs min-h-[100px]"
+          />
+        </div>
+        <Button
+          variant="primary"
+          loading={createMut.isPending}
+          onClick={() => createMut.mutate()}
+          disabled={!title || !key}
+        >
+          Add SSH key
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function SettingsTokensPage() {
+  const [name, setName] = useState('')
+  const [newToken, setNewToken] = useState('')
+  const [error, setError] = useState('')
+  const qc = useQueryClient()
+  const { data: tokens, isLoading } = useQuery({
+    queryKey: ['tokens'],
+    queryFn: async () => {
+      const { listTokens } = await import('@/api/settings')
+      return listTokens()
+    },
+  })
+  const createMut = useMutation({
+    mutationFn: async () => {
+      const { createToken } = await import('@/api/settings')
+      return createToken({ name })
+    },
+    onSuccess: (data) => {
+      setNewToken(data.token)
+      setName('')
+      setError('')
+      qc.invalidateQueries({ queryKey: ['tokens'] })
+    },
+    onError: (e) => setError(getErrorMessage(e)),
+  })
+  const delMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { deleteToken } = await import('@/api/settings')
+      return deleteToken(id)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tokens'] }),
+  })
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4 border-b border-[var(--color-border-default)] pb-2">
+        Personal access tokens
+      </h2>
+      <p className="text-sm text-[var(--color-fg-muted)] mb-4">
+        Tokens authenticate to the SoftGit API. Treat them like passwords.
+      </p>
+      {newToken && (
+        <div className="mb-4 p-3 border border-[var(--color-success-emphasis)] rounded-md bg-[var(--color-canvas-subtle)] text-sm">
+          <p className="font-semibold mb-1">Copy your new token now — you won&apos;t see it again.</p>
+          <code className="text-xs break-all">{newToken}</code>
+        </div>
+      )}
+      {error && <p className="text-sm text-[var(--color-danger-fg)] mb-2">{error}</p>}
+      {isLoading && <Spinner />}
+      <ul className="space-y-2 mb-6">
+        {(tokens || []).map((tok) => (
+          <li
+            key={tok.id}
+            className="border border-[var(--color-border-default)] rounded-md p-3 flex flex-wrap items-center justify-between gap-2 text-sm"
+          >
+            <div>
+              <div className="font-semibold">{tok.name}</div>
+              <code className="text-xs text-[var(--color-fg-muted)]">{tok.token_prefix}…</code>
+            </div>
+            <Button size="sm" variant="danger" onClick={() => delMut.mutate(tok.id)}>
+              Revoke
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap gap-2 items-end max-w-md">
+        <div className="flex-1">
+          <Label htmlFor="tok-name">Token name</Label>
+          <Input id="tok-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="CI token" />
+        </div>
+        <Button variant="primary" loading={createMut.isPending} disabled={!name} onClick={() => createMut.mutate()}>
+          Generate token
+        </Button>
+      </div>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams, useSearchParams, NavLink, Outlet } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -7,9 +8,16 @@ import {
   getContents,
   starRepository,
   unstarRepository,
+  isStarred,
+  listIssues,
+  createIssue,
+  updateIssue,
+  listReleases,
+  createRelease,
 } from '@/api/repositories'
-import { Badge, Button, Spinner, ErrorState, EmptyState } from '@/components/ui'
+import { Badge, Button, Spinner, ErrorState, EmptyState, Input, Textarea } from '@/components/ui'
 import { getErrorMessage } from '@/api/client'
+import { useAuth } from '@/hooks/useAuth'
 import {
   Code2,
   GitBranch,
@@ -34,19 +42,26 @@ export function RepoLayout() {
   const { owner = '', repo = '' } = useParams()
   const queryClient = useQueryClient()
 
+  const { isAuthenticated } = useAuth()
   const { data: repository, isLoading, error, refetch } = useQuery({
     queryKey: ['repo', owner, repo],
     queryFn: () => getRepository(owner, repo),
     enabled: !!owner && !!repo,
   })
-
-  const starMutation = useMutation({
-    mutationFn: () => starRepository(owner, repo),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repo', owner, repo] }),
+  const { data: starred } = useQuery({
+    queryKey: ['starred', owner, repo],
+    queryFn: () => isStarred(owner, repo),
+    enabled: isAuthenticated && !!owner && !!repo,
   })
-  const unstarMutation = useMutation({
-    mutationFn: () => unstarRepository(owner, repo),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repo', owner, repo] }),
+  const starMutation = useMutation({
+    mutationFn: async () => {
+      if (starred) await unstarRepository(owner, repo)
+      else await starRepository(owner, repo)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['repo', owner, repo] })
+      queryClient.invalidateQueries({ queryKey: ['starred', owner, repo] })
+    },
   })
 
   if (isLoading) {
@@ -114,12 +129,13 @@ export function RepoLayout() {
                 </Badge>
               </Button>
               <Button
-                variant="outline"
+                variant={starred ? 'primary' : 'outline'}
                 size="sm"
+                disabled={!isAuthenticated}
                 onClick={() => starMutation.mutate()}
                 loading={starMutation.isPending}
               >
-                <Star size={14} /> Star
+                <Star size={14} /> {starred ? 'Starred' : 'Star'}
                 <Badge variant="counter" className="ml-1">
                   {repository.stars_count}
                 </Badge>
@@ -221,6 +237,14 @@ export function RepoCodePage() {
             className="px-2 py-1.5 bg-transparent min-w-[200px] max-w-[320px] text-[var(--color-fg-default)] outline-none"
             onClick={(e) => (e.target as HTMLInputElement).select()}
           />
+          <button
+            type="button"
+            className="px-2 py-1.5 border-l border-[var(--color-border-default)] hover:bg-[var(--color-canvas-subtle)] font-medium"
+            onClick={() => navigator.clipboard?.writeText(cloneUrl)}
+            title="Copy clone URL"
+          >
+            Copy
+          </button>
         </div>
         <Link to={`/${owner}/${repo}/commits`}>
           <Button variant="outline" size="sm">
@@ -387,18 +411,113 @@ function RepoReadme({
 // Placeholder tab pages
 export function RepoIssuesPage() {
   const { owner = '', repo = '' } = useParams()
+  const { isAuthenticated } = useAuth()
+  const [state, setState] = useState<'open' | 'closed' | 'all'>('open')
+  const [showNew, setShowNew] = useState(false)
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const qc = useQueryClient()
+  const { data: issues, isLoading } = useQuery({
+    queryKey: ['issues', owner, repo, state],
+    queryFn: () => listIssues(owner, repo, state),
+  })
+  const createMut = useMutation({
+    mutationFn: () => createIssue(owner, repo, { title, body }),
+    onSuccess: () => {
+      setShowNew(false)
+      setTitle('')
+      setBody('')
+      qc.invalidateQueries({ queryKey: ['issues', owner, repo] })
+      qc.invalidateQueries({ queryKey: ['repo', owner, repo] })
+    },
+  })
+  const closeMut = useMutation({
+    mutationFn: (n: number) => updateIssue(owner, repo, n, { state: 'closed' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['issues', owner, repo] })
+      qc.invalidateQueries({ queryKey: ['repo', owner, repo] })
+    },
+  })
+
   return (
-    <div className="max-w-[1280px] mx-auto px-4 py-6">
-      <div className="flex justify-between mb-4">
-        <h2 className="text-lg font-semibold">Issues</h2>
-        <Button variant="primary" size="sm" disabled title="Coming when backend supports create">
-          New issue
-        </Button>
+    <div className="max-w-[1280px] mx-auto px-4 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex gap-1 text-sm">
+          {(['open', 'closed', 'all'] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setState(s)}
+              className={
+                state === s
+                  ? 'px-3 py-1 rounded-full bg-[var(--color-canvas-subtle)] font-semibold'
+                  : 'px-3 py-1 rounded-full text-[var(--color-fg-muted)]'
+              }
+            >
+              {s[0].toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+        {isAuthenticated && (
+          <Button variant="primary" size="sm" onClick={() => setShowNew((v) => !v)}>
+            New issue
+          </Button>
+        )}
       </div>
-      <EmptyState
-        title="No issues"
-        description={`Issues for ${owner}/${repo} will appear here once created via the API.`}
-      />
+      {showNew && (
+        <div className="border border-[var(--color-border-default)] rounded-md p-4 mb-4 space-y-3 max-w-xl">
+          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Textarea placeholder="Leave a comment" value={body} onChange={(e) => setBody(e.target.value)} />
+          <Button
+            variant="primary"
+            size="sm"
+            loading={createMut.isPending}
+            disabled={!title.trim()}
+            onClick={() => createMut.mutate()}
+          >
+            Submit new issue
+          </Button>
+        </div>
+      )}
+      {isLoading && (
+        <div className="flex justify-center py-8">
+          <Spinner />
+        </div>
+      )}
+      <ul className="border border-[var(--color-border-default)] rounded-md divide-y divide-[var(--color-border-muted)]">
+        {(issues || []).map((issue) => (
+          <li key={issue.number} className="px-4 py-3 flex flex-wrap items-start gap-3 text-sm">
+            <CircleDot
+              size={16}
+              className={
+                issue.state === 'open'
+                  ? 'text-[var(--color-success-fg)] mt-0.5'
+                  : 'text-[var(--color-danger-fg)] mt-0.5'
+              }
+            />
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold">{issue.title}</div>
+              <div className="text-xs text-[var(--color-fg-muted)] mt-0.5">
+                #{issue.number} opened by {issue.author?.username}
+                {issue.author?.is_verified && (
+                  <VerifiedBadge size={12} className="inline-block ml-0.5 align-text-bottom" />
+                )}
+              </div>
+              {issue.body && (
+                <p className="text-xs text-[var(--color-fg-muted)] mt-1 line-clamp-2">{issue.body}</p>
+              )}
+            </div>
+            {issue.state === 'open' && isAuthenticated && (
+              <Button size="sm" variant="outline" onClick={() => closeMut.mutate(issue.number)}>
+                Close
+              </Button>
+            )}
+          </li>
+        ))}
+        {!isLoading && (!issues || issues.length === 0) && (
+          <li className="px-4 py-10 text-center text-[var(--color-fg-muted)]">No issues found.</li>
+        )}
+      </ul>
     </div>
   )
 }
@@ -507,20 +626,86 @@ export function RepoCommitsPage() {
 }
 
 void Tag
-void unstarRepository
 
 
 export function RepoReleasesPage() {
   const { owner = '', repo = '' } = useParams()
+  const { isAuthenticated, user } = useAuth()
+  const [showNew, setShowNew] = useState(false)
+  const [tag, setTag] = useState('')
+  const [name, setName] = useState('')
+  const [body, setBody] = useState('')
+  const qc = useQueryClient()
+  const { data: releases, isLoading } = useQuery({
+    queryKey: ['releases', owner, repo],
+    queryFn: () => listReleases(owner, repo),
+  })
+  const createMut = useMutation({
+    mutationFn: () => createRelease(owner, repo, { tag_name: tag, name: name || tag, body }),
+    onSuccess: () => {
+      setShowNew(false)
+      setTag('')
+      setName('')
+      setBody('')
+      qc.invalidateQueries({ queryKey: ['releases', owner, repo] })
+    },
+  })
+
   return (
     <div className="max-w-[1280px] mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Releases</h2>
+        {isAuthenticated && user?.username === owner && (
+          <Button variant="primary" size="sm" onClick={() => setShowNew((v) => !v)}>
+            Draft a new release
+          </Button>
+        )}
       </div>
-      <EmptyState
-        title="No releases yet"
-        description={`When ${owner}/${repo} publishes a release, it will appear here. Releases created by verified SoftGit accounts show a green Verified badge.`}
-      />
+      {showNew && (
+        <div className="border border-[var(--color-border-default)] rounded-md p-4 mb-4 space-y-3 max-w-xl">
+          <Input placeholder="Tag version (e.g. v1.0.0)" value={tag} onChange={(e) => setTag(e.target.value)} />
+          <Input placeholder="Release title" value={name} onChange={(e) => setName(e.target.value)} />
+          <Textarea placeholder="Describe this release" value={body} onChange={(e) => setBody(e.target.value)} />
+          <Button
+            variant="primary"
+            size="sm"
+            loading={createMut.isPending}
+            disabled={!tag.trim()}
+            onClick={() => createMut.mutate()}
+          >
+            Publish release
+          </Button>
+        </div>
+      )}
+      {isLoading && (
+        <div className="flex justify-center py-8">
+          <Spinner />
+        </div>
+      )}
+      <ul className="space-y-4">
+        {(releases || []).map((rel) => (
+          <li key={rel.id} className="border border-[var(--color-border-default)] rounded-md p-4">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="text-lg font-semibold">{rel.name || rel.tag_name}</span>
+              <code className="text-xs bg-[var(--color-canvas-subtle)] px-1.5 py-0.5 rounded">{rel.tag_name}</code>
+              {(rel.verified || rel.author?.is_verified) && <VerifiedCommitBadge size={14} />}
+            </div>
+            <div className="text-xs text-[var(--color-fg-muted)] mb-2">
+              {rel.author?.username}
+              {rel.author?.is_verified && (
+                <VerifiedBadge size={12} className="inline-block ml-0.5 align-text-bottom" />
+              )}
+            </div>
+            {rel.body && <div className="text-sm whitespace-pre-wrap">{rel.body}</div>}
+          </li>
+        ))}
+        {!isLoading && (!releases || releases.length === 0) && (
+          <EmptyState
+            title="No releases yet"
+            description={`When ${owner}/${repo} publishes a release, it will appear here.`}
+          />
+        )}
+      </ul>
     </div>
   )
 }

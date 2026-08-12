@@ -338,10 +338,12 @@ func (s *Server) handleStarRepo(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "repository not found")
 		return
 	}
-	_, _ = s.db.Pool.Exec(r.Context(), `
+	tag, err := s.db.Pool.Exec(r.Context(), `
 		INSERT INTO stars (user_id, repository_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
 	`, user.ID, repo.ID)
-	_, _ = s.db.Pool.Exec(r.Context(), `UPDATE repositories SET stars_count = stars_count + 1 WHERE id = $1`, repo.ID)
+	if err == nil && tag.RowsAffected() > 0 {
+		_, _ = s.db.Pool.Exec(r.Context(), `UPDATE repositories SET stars_count = stars_count + 1 WHERE id = $1`, repo.ID)
+	}
 	writeNoContent(w)
 }
 
@@ -361,7 +363,6 @@ func (s *Server) handleUnstarRepo(w http.ResponseWriter, r *http.Request) {
 	writeNoContent(w)
 }
 
-// Stubs for remaining handlers referenced in router
 func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 	user, err := s.getUserByUsername(r.Context(), username)
@@ -373,68 +374,26 @@ func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, user)
 }
 
-func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	writeJSON(w, http.StatusOK, map[string]interface{}{"query": q, "users": []interface{}{}, "repositories": []interface{}{}})
-}
 
-func (s *Server) handleListSSHKeys(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleCreateSSHKey(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
-func (s *Server) handleDeleteSSHKey(w http.ResponseWriter, r *http.Request) {
-	writeNoContent(w)
-}
-func (s *Server) handleListTokens(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
-func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
-	writeNoContent(w)
-}
-func (s *Server) handleListIssues(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleCreateIssue(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
-func (s *Server) handleGetIssue(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotFound, "not_found", "issue not found")
-}
-func (s *Server) handleUpdateIssue(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
-func (s *Server) handleCreateIssueComment(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
+
+// context import
+
+
 func (s *Server) handleListPulls(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, []interface{}{})
 }
 func (s *Server) handleCreatePull(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
+	writeError(w, http.StatusNotImplemented, "not_implemented", "pull requests coming soon")
 }
 func (s *Server) handleGetPull(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusNotFound, "not_found", "pull request not found")
 }
 func (s *Server) handleMergePull(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
-}
-func (s *Server) handleListReleases(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, []interface{}{})
-}
-func (s *Server) handleCreateRelease(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
+	writeError(w, http.StatusNotImplemented, "not_implemented", "merge coming soon")
 }
 func (s *Server) handleListHooks(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, []interface{}{})
 }
 func (s *Server) handleCreateHook(w http.ResponseWriter, r *http.Request) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "coming soon")
+	writeError(w, http.StatusNotImplemented, "not_implemented", "webhooks coming soon")
 }
-
-// context import
-

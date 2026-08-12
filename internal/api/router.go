@@ -64,6 +64,7 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 		r.Get("/users/{username}/repos", s.handleListUserRepos)
 		r.Get("/users/{username}/profile-readme", s.handleProfileReadme)
 		r.Get("/search", s.handleSearch)
+		r.Get("/explore/repos", s.handleExploreRepos)
 
 		// Public avatar files
 		r.Get("/avatars/{filename}", s.handleServeAvatar)
@@ -102,6 +103,7 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 			r.Post("/repos/{owner}/{repo}/transfer", s.handleTransferRepo)
 			r.Post("/repos/{owner}/{repo}/rename", s.handleRenameRepo)
 
+			r.Get("/user/starred/{owner}/{repo}", s.handleCheckStarred)
 			r.Put("/user/starred/{owner}/{repo}", s.handleStarRepo)
 			r.Delete("/user/starred/{owner}/{repo}", s.handleUnstarRepo)
 
