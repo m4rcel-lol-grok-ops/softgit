@@ -33,7 +33,7 @@ func NewRouter(cfg *config.Config, database *db.DB, rdb *redis.Client, gitMgr *g
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowOriginFunc: func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-ID"},
 		ExposedHeaders:   []string{"Link", "X-Request-ID", "X-Total-Count"},
