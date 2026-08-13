@@ -121,14 +121,6 @@ export async function deleteAvatar(): Promise<import('@/types').User> {
   return data
 }
 
-export async function starRepository(owner: string, repo: string): Promise<void> {
-  await apiClient.put(`/user/starred/${owner}/${repo}`)
-}
-
-export async function unstarRepository(owner: string, repo: string): Promise<void> {
-  await apiClient.delete(`/user/starred/${owner}/${repo}`)
-}
-
 export async function isStarred(owner: string, repo: string): Promise<boolean> {
   try {
     const { data } = await apiClient.get<{ starred: boolean }>(`/user/starred/${owner}/${repo}`)

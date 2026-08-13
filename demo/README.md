@@ -1,26 +1,30 @@
 # SoftGit UI Demo Screenshots
 
-Live screenshots from SoftGit backend + frontend. Test data is wiped after capture.
+Captured from a live SoftGit backend + frontend run. Test data is wiped after capture.
 
-| File | Description |
-|------|-------------|
+| File | Page |
+|------|------|
+| `01-landing.png` | Logged-out home |
 | `02-login.png` | Sign in |
-| `04-dashboard.png` | Home with repositories |
-| `05-repo-code.png` | Repository code + README |
-| `06-commits.png` | Commits (verified author badge when matched) |
-| `10-profile.png` | Profile with **verified badge**, avatar, profile README |
-| `11-settings-profile.png` | Profile settings (avatar change/delete) |
+| `04-dashboard.png` | Dashboard with repos |
+| `05-repo-code.png` | Repository code + clone URL |
+| `06-commits.png` | Commits (verified when applicable) |
+| `07-issues.png` | Issues list |
+| `08-pulls.png` | Pull requests |
+| `09-repo-settings.png` | Repository settings |
+| `10-profile.png` | Profile (verified badge + README) |
+| `11-settings-profile.png` | Profile settings / avatar |
 | `12-new-repo.png` | Create repository |
+| `13-search.png` | Search results |
 | `14-repo-dark.png` | Dark theme |
-| `15-mobile-dashboard.png` | Mobile home |
-| `16-mobile-repo.png` | Mobile profile |
+| `15-mobile-dashboard.png` | Mobile dashboard |
+| `16-mobile-repo.png` | Mobile repository |
 | `19-profile-repo.png` | Profile repository |
 | `20-settings-appearance.png` | Theme picker |
 | `21-admin-overview.png` | Admin overview |
-| `22-admin-users.png` | Admin users (verify / admin / disable) |
+| `22-admin-users.png` | Admin users |
 | `23-admin-settings.png` | Site settings |
-
-## Verified badge
-
-Admins can mark users as verified. A blue badge appears after the display name with tooltip:
-“This user has been verified by SoftGit administration.”
+| `24-explore.png` | Explore public repos |
+| `25-releases.png` | Releases |
+| `26-settings-ssh.png` | SSH keys |
+| `27-settings-tokens.png` | Access tokens |
