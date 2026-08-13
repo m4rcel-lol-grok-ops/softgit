@@ -17,129 +17,43 @@ export function DashboardPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="relative overflow-hidden">
-        {/* Hero */}
-        <div className="border-b border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-          <div className="max-w-[1100px] mx-auto px-4 py-16 md:py-24">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <p className="text-sm font-semibold text-[var(--color-accent-fg)] mb-3 tracking-wide uppercase">
-                  Self-hosted Git hosting
-                </p>
-                <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4 tracking-tight">
-                  Where your code lives — on your terms
-                </h1>
-                <p className="text-lg text-[var(--color-fg-muted)] mb-8 max-w-md">
-                  SoftGit is a production-oriented Git hosting platform. Repositories, issues,
-                  releases, SSH, and access tokens — without giving up control of your data.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Link to="/register">
-                    <Button variant="primary" size="lg">
-                      Create free account
-                    </Button>
-                  </Link>
-                  <Link to="/login">
-                    <Button variant="outline" size="lg">
-                      Sign in
-                    </Button>
-                  </Link>
-                  <Link to="/explore">
-                    <Button variant="ghost" size="lg">
-                      Explore public repos
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-              <div className="hidden md:block">
-                <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-canvas-default)] shadow-lg overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    <span className="ml-3 text-xs text-[var(--color-fg-muted)] font-mono">
-                      alice / hello-world
-                    </span>
-                  </div>
-                  <div className="p-4 font-mono text-xs space-y-2 text-[var(--color-fg-muted)]">
-                    <div>
-                      <span className="text-[var(--color-success-fg)]">$</span> git clone softgit.example/alice/hello-world.git
-                    </div>
-                    <div className="text-[var(--color-fg-default)]">Cloning into &apos;hello-world&apos;...</div>
-                    <div>
-                      <span className="text-[var(--color-success-fg)]">$</span> git push origin main
-                    </div>
-                    <div className="text-[var(--color-fg-default)]">Enumerating objects: 12, done.</div>
-                    <div className="pt-2 border-t border-[var(--color-border-muted)] flex gap-4 text-[var(--color-fg-default)]">
-                      <span>★ 128 stars</span>
-                      <span>⑂ 14 forks</span>
-                      <span className="text-[var(--color-success-fg)]">● 3 open issues</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="max-w-[720px] mx-auto px-4 py-20 md:py-28">
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
+          SoftGit
+        </h1>
+        <p className="text-lg text-[var(--color-fg-muted)] mb-8 leading-relaxed max-w-xl">
+          Self-hosted Git hosting. Repositories, issues, releases, and SSH — under your control.
+        </p>
+        <div className="flex flex-wrap gap-3 mb-16">
+          <Link to="/register">
+            <Button variant="primary" size="lg">
+              Sign up
+            </Button>
+          </Link>
+          <Link to="/login">
+            <Button variant="outline" size="lg">
+              Sign in
+            </Button>
+          </Link>
         </div>
-
-        {/* Feature grid */}
-        <div className="max-w-[1100px] mx-auto px-4 py-16">
-          <h2 className="text-2xl font-semibold text-center mb-2">Everything you need to host Git</h2>
-          <p className="text-center text-[var(--color-fg-muted)] mb-10 max-w-xl mx-auto">
-            Familiar workflows, built independently — not a thin wrapper around another product.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                title: 'Real Git over HTTP & SSH',
-                body: 'Clone, fetch, push, and pull against bare repositories with Smart HTTP and SSH.',
-              },
-              {
-                title: 'Issues & releases',
-                body: 'Track work with issues, publish versioned releases, and mark verified authors.',
-              },
-              {
-                title: 'Access control',
-                body: 'Public and private repos, personal access tokens, and SSH keys for developers.',
-              },
-              {
-                title: 'Profiles & orgs-ready',
-                body: 'User profiles, avatars, profile READMEs, and admin tools for your instance.',
-              },
-              {
-                title: 'Themes your way',
-                body: 'Dark by default, with Nord, Dracula, Solarized, high-contrast, and more.',
-              },
-              {
-                title: 'Self-hosted first',
-                body: 'Docker Compose, PostgreSQL, Redis, and a simple Caddy reverse proxy.',
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="border border-[var(--color-border-default)] rounded-lg p-5 bg-[var(--color-canvas-default)] hover:border-[var(--color-fg-muted)] transition-colors"
-              >
-                <h3 className="font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-[var(--color-fg-muted)] leading-relaxed">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-canvas-subtle)]">
-          <div className="max-w-[1100px] mx-auto px-4 py-12 text-center">
-            <h2 className="text-xl font-semibold mb-2">Ready to host your own Git?</h2>
-            <p className="text-sm text-[var(--color-fg-muted)] mb-5">
-              Spin up SoftGit in minutes and keep your source code under your control.
-            </p>
-            <Link to="/register">
-              <Button variant="primary" size="lg">
-                Get started
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <ul className="space-y-3 text-sm text-[var(--color-fg-muted)] border-t border-[var(--color-border-default)] pt-8">
+          <li className="flex gap-3">
+            <span className="text-[var(--color-fg-default)] font-medium w-36 shrink-0">Git</span>
+            <span>Clone, push, and pull over HTTPS and SSH</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="text-[var(--color-fg-default)] font-medium w-36 shrink-0">Collaboration</span>
+            <span>Issues, releases, stars, and verified accounts</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="text-[var(--color-fg-default)] font-medium w-36 shrink-0">Access</span>
+            <span>Personal tokens, SSH keys, public and private repos</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="text-[var(--color-fg-default)] font-medium w-36 shrink-0">Deploy</span>
+            <span>Docker Compose, PostgreSQL, Redis, Caddy</span>
+          </li>
+        </ul>
       </div>
     )
   }
