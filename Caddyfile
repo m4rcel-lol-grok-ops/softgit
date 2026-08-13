@@ -1,9 +1,17 @@
-{$DOMAIN:localhost} {
+:27296 {
 	handle /api/* {
 		reverse_proxy backend:3000
 	}
 
 	handle /*.git* {
+		reverse_proxy backend:3000
+	}
+
+	handle /health {
+		reverse_proxy backend:3000
+	}
+
+	handle /ready {
 		reverse_proxy backend:3000
 	}
 

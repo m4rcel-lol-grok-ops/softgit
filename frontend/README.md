@@ -38,7 +38,7 @@ Static files are written to `dist/`.
 docker build -t softgit-frontend \
   --build-arg VITE_API_URL=/api/v1 \
   .
-docker run -p 8080:80 softgit-frontend
+docker run -p 27296:80 softgit-frontend
 ```
 
 ## Caddy (frontend + backend)

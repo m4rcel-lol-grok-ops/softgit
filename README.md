@@ -30,14 +30,13 @@ SoftGit is a from-scratch Git hosting platform backend inspired by the capabilit
 Internet
    │
    ▼
-Caddy (host binary OR container)  ← HTTPS, TLS, reverse proxy
+Caddy  :27296   (public site + API reverse proxy)
    │
-   ▼
-Backend (Go)  :3000
-   ├── PostgreSQL
-   └── Redis
-Git data & uploads on Docker volumes / bind mounts
-SSH :2222 (map to host 22 as desired)
+   ├── frontend (static SPA)
+   └── backend  :3000 (internal)
+         ├── PostgreSQL
+         └── Redis
+SSH Git :2222
 ```
 
 ## Quick start (Docker Compose)
@@ -48,12 +47,14 @@ cd softgit
 cp .env.example .env
 # Edit APP_SECRET, JWT_SECRET, DOMAIN, APP_URL at minimum
 
-docker compose up -d
+docker compose up -d --build
 ```
 
-- API: `http://localhost:3000`
-- Health: `http://localhost:3000/health`
-- Ready: `http://localhost:3000/ready`
+Open the site at **http://localhost:27296**
+
+- API: `http://localhost:27296/api/v1`
+- Health: `http://localhost:27296/health`
+- Ready: `http://localhost:27296/ready`
 - SSH Git: `ssh://git@localhost:2222`
 
 First registered user becomes administrator.
@@ -75,16 +76,16 @@ Caddy obtains and renews certificates automatically when `DOMAIN` is a public ho
    docker compose up -d
    ```
 
-2. Backend listens on host port `3000` (see `docker-compose.yml`).
+2. Publish backend API on host port 3000 and frontend on 8080 (or use the included Caddy service).
 
-3. Install/configure host Caddy using `Caddyfile.host.example`:
+3. For host Caddy on port **27296**, use `Caddyfile.host.example`:
 
    ```bash
-   # Example: copy and adjust domain
    sudo cp Caddyfile.host.example /etc/caddy/Caddyfile
-   # edit domain → your domain
    sudo systemctl reload caddy
    ```
+
+   Site: `http://<host>:27296`
 
 4. Verify:
 

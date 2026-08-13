@@ -1,11 +1,10 @@
-# SoftGit - default / production-oriented Compose
+# SoftGit
 # Usage:
 #   cp .env.example .env
-#   # edit .env
-#   docker compose up -d
+#   docker compose up -d --build
 #
-# This file runs: backend + postgres + redis
-# Caddy can be added via docker-compose.prod.yml or run on the host.
+# Site is published on host port 27296:
+#   http://localhost:27296
 
 name: softgit
 
@@ -57,15 +56,14 @@ services:
       STORAGE_LOCAL_PATH: /data/storage
       SSH_HOST_KEY_PATH: /data/ssh/ssh_host_ed25519_key
       HTTP_PORT: "3000"
+      APP_URL: ${APP_URL:-http://localhost:27296}
       MIGRATIONS_DIR: /app/migrations
     volumes:
       - softgit_git:/data/git
       - softgit_storage:/data/storage
       - softgit_ssh:/data/ssh
     ports:
-      # HTTP API (proxied by Caddy)
-      - "3000:3000"
-      # SSH Git (map host 22 or another port as needed)
+      # SSH Git only (HTTP is via Caddy on 27296)
       - "2222:2222"
     depends_on:
       postgres:
@@ -82,6 +80,35 @@ services:
       retries: 5
       start_period: 45s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    image: softgit-frontend:latest
+    restart: unless-stopped
+    networks:
+      - softgit_public
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "27296:27296"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - softgit_caddy_data:/data
+      - softgit_caddy_config:/config
+    networks:
+      - softgit_public
+    depends_on:
+      - backend
+      - frontend
+
 networks:
   softgit_internal:
     driver: bridge
@@ -95,19 +122,5 @@ volumes:
   softgit_git:
   softgit_storage:
   softgit_ssh:
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: /api/v1
-    image: softgit-frontend:latest
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    networks:
-      - softgit_public
-    depends_on:
-      backend:
-        condition: service_healthy
+  softgit_caddy_data:
+  softgit_caddy_config:
