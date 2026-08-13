@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/hooks/useAuth'
 import { AppRoutes } from '@/routes'
 import '@/styles/index.css'
+import { applyTheme, getStoredThemeId } from '@/themes'
+
+applyTheme(getStoredThemeId())
 
 const queryClient = new QueryClient({
   defaultOptions: {

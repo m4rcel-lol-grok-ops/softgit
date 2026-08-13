@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth, getErrorMessage } from '@/hooks/useAuth'
 import { updateCurrentUser } from '@/api/auth'
 import { uploadAvatar, deleteAvatar } from '@/api/repositories'
+import { listSSHKeys, createSSHKey, deleteSSHKey, listTokens, createToken, deleteToken } from '@/api/settings'
 import { Button, Input, Label, Textarea, Avatar, Spinner } from '@/components/ui'
 import { resolveAvatarUrl } from '@/utils/avatar'
 import { cn } from '@/utils/cn'
@@ -322,18 +323,12 @@ export function SettingsSSHKeysPage() {
   const [error, setError] = useState('')
   const [msg, setMsg] = useState('')
   const qc = useQueryClient()
-  const { data: keys, isLoading } = useQuery({
+  const { data: keys, isLoading, error: loadError } = useQuery({
     queryKey: ['ssh-keys'],
-    queryFn: async () => {
-      const { listSSHKeys } = await import('@/api/settings')
-      return listSSHKeys()
-    },
+    queryFn: listSSHKeys,
   })
   const createMut = useMutation({
-    mutationFn: async () => {
-      const { createSSHKey } = await import('@/api/settings')
-      return createSSHKey({ title, public_key: key })
-    },
+    mutationFn: () => createSSHKey({ title, public_key: key }),
     onSuccess: () => {
       setMsg('SSH key added.')
       setError('')
@@ -344,10 +339,7 @@ export function SettingsSSHKeysPage() {
     onError: (e) => setError(getErrorMessage(e)),
   })
   const delMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { deleteSSHKey } = await import('@/api/settings')
-      return deleteSSHKey(id)
-    },
+    mutationFn: (id: string) => deleteSSHKey(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ssh-keys'] }),
   })
 
@@ -357,11 +349,18 @@ export function SettingsSSHKeysPage() {
         SSH keys
       </h2>
       <p className="text-sm text-[var(--color-fg-muted)] mb-4">
-        Keys used to authenticate Git over SSH.
+        Keys used to authenticate Git over SSH. SoftGit accepts OpenSSH public keys (ed25519, RSA, ECDSA).
       </p>
       {msg && <p className="text-sm text-[var(--color-success-fg)] mb-2">{msg}</p>}
       {error && <p className="text-sm text-[var(--color-danger-fg)] mb-2">{error}</p>}
-      {isLoading && <Spinner />}
+      {loadError && (
+        <p className="text-sm text-[var(--color-danger-fg)] mb-2">{getErrorMessage(loadError)}</p>
+      )}
+      {isLoading && (
+        <div className="flex justify-center py-6">
+          <Spinner />
+        </div>
+      )}
       <ul className="space-y-2 mb-6">
         {(keys || []).map((k) => (
           <li
@@ -378,7 +377,9 @@ export function SettingsSSHKeysPage() {
           </li>
         ))}
         {!isLoading && (!keys || keys.length === 0) && (
-          <li className="text-sm text-[var(--color-fg-muted)]">No SSH keys yet.</li>
+          <li className="border border-dashed border-[var(--color-border-default)] rounded-md p-6 text-center text-sm text-[var(--color-fg-muted)]">
+            No SSH keys yet. Add one below to push and pull over SSH.
+          </li>
         )}
       </ul>
       <h3 className="font-semibold text-sm mb-2">Add a new SSH key</h3>
@@ -415,18 +416,12 @@ export function SettingsTokensPage() {
   const [newToken, setNewToken] = useState('')
   const [error, setError] = useState('')
   const qc = useQueryClient()
-  const { data: tokens, isLoading } = useQuery({
+  const { data: tokens, isLoading, error: loadError } = useQuery({
     queryKey: ['tokens'],
-    queryFn: async () => {
-      const { listTokens } = await import('@/api/settings')
-      return listTokens()
-    },
+    queryFn: listTokens,
   })
   const createMut = useMutation({
-    mutationFn: async () => {
-      const { createToken } = await import('@/api/settings')
-      return createToken({ name })
-    },
+    mutationFn: () => createToken({ name }),
     onSuccess: (data) => {
       setNewToken(data.token)
       setName('')
@@ -436,10 +431,7 @@ export function SettingsTokensPage() {
     onError: (e) => setError(getErrorMessage(e)),
   })
   const delMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { deleteToken } = await import('@/api/settings')
-      return deleteToken(id)
-    },
+    mutationFn: (id: string) => deleteToken(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tokens'] }),
   })
 
@@ -449,8 +441,12 @@ export function SettingsTokensPage() {
         Personal access tokens
       </h2>
       <p className="text-sm text-[var(--color-fg-muted)] mb-4">
-        Tokens authenticate to the SoftGit API. Treat them like passwords.
+        Tokens authenticate to the SoftGit API (prefix <code className="text-xs">sgt_</code>).
+        Treat them like passwords — they are only shown once at creation.
       </p>
+      {loadError && (
+        <p className="text-sm text-[var(--color-danger-fg)] mb-2">{getErrorMessage(loadError)}</p>
+      )}
       {newToken && (
         <div className="mb-4 p-3 border border-[var(--color-success-emphasis)] rounded-md bg-[var(--color-canvas-subtle)] text-sm">
           <p className="font-semibold mb-1">Copy your new token now — you won&apos;t see it again.</p>
@@ -474,6 +470,11 @@ export function SettingsTokensPage() {
             </Button>
           </li>
         ))}
+        {!isLoading && (!tokens || tokens.length === 0) && (
+          <li className="border border-dashed border-[var(--color-border-default)] rounded-md p-6 text-center text-sm text-[var(--color-fg-muted)]">
+            No tokens yet. Generate one below for CI or API access.
+          </li>
+        )}
       </ul>
       <div className="flex flex-wrap gap-2 items-end max-w-md">
         <div className="flex-1">

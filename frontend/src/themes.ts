@@ -306,7 +306,8 @@ export const THEME_STORAGE_KEY = 'softgit_theme'
 export function getStoredThemeId(): ThemeId {
   const v = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null
   if (v && THEMES.some((t) => t.id === v)) return v
-  return 'system'
+  // SoftGit defaults to dark
+  return 'dark'
 }
 
 export function applyTheme(id: ThemeId) {
